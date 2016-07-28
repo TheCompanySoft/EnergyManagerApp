@@ -1,0 +1,511 @@
+//
+//  MonitorViewController.m
+//  JinfengEnergApp
+//
+//  Created by BlackChen on 15/12/8.
+//  Copyright © 2015年 BlackChen. All rights reserved.
+//
+
+#import "ChooseOfMonitorViewController.h"
+#import "MonitorViewController.h"
+#import "WatchFaceView.h"
+
+@interface MonitorViewController ()<UIScrollViewDelegate>{
+//    滚动底视图
+    UIScrollView *myscrollview;
+    
+    RDVTabBarController *tabbarVC;
+    ChooseOfMonitorViewController *chooseViewController;
+//    表底图
+    UIView *watchView;
+//    表
+    WatchFaceView *watchFaceView;
+//    本地
+    NSUserDefaults *userDefaults;
+    //    表和其名
+    NSMutableArray *nameArr;
+    //    请求的所有数据
+    NSMutableArray *tableDataArray;
+    //    接收的所有表信息
+    NSMutableArray *allMetersDataArray;
+//    时间
+    UILabel *timeLable;
+//    通知
+    NSNotificationCenter *notificationcenter;
+//    刷新时间
+    NSDictionary *reflashTime;
+//    id
+    NSString *idcode;
+//    cookie
+    NSString *cookieString;
+}
+@property(nonatomic,strong) NSTimer *timer2;
+@end
+
+@implementation MonitorViewController
+
+- (void)viewWillAppear:(BOOL)animated{
+    [self.timer2 setFireDate:[NSDate distantPast]];
+    
+    self.navigationController.navigationBarHidden = YES;
+    
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(TapC:)];
+    [self.view addGestureRecognizer:tap];
+}
+
+- (void)TapC:(UITapGestureRecognizer *)tap{
+    tabbarVC.viewisHidden = NO;
+    [tabbarVC.otherChoiceView removeFromSuperview];
+}
+
+
+- (void)viewWillDisappear:(BOOL)animated{
+    //关闭定时器
+    [self.timer2 setFireDate:[NSDate distantFuture]];
+    self.navigationController.navigationBarHidden = YES;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    AppDelegate *delegate = (AppDelegate *)[UIApplication sharedApplication].delegate;
+    tabbarVC = (RDVTabBarController *)delegate.window.rootViewController;
+    tabbarVC.viewisHidden = NO;
+    [tabbarVC.otherChoiceView removeFromSuperview];
+    [self setNavItem];
+    [self addScroAndTime];
+    
+    //本地去参数加载
+    userDefaults= [NSUserDefaults standardUserDefaults];
+    allMetersDataArray = [userDefaults objectForKey:@"selectedMeters"];
+    nameArr = [userDefaults objectForKey:@"nameArr"];
+    if (allMetersDataArray.count > 0) {
+        [self loadDataTime];
+    }
+    //获取通知中心单例对象
+    notificationcenter = [NSNotificationCenter defaultCenter];
+    //添加当前类对象为一个观察者，name和object设置为nil，表示接收一切通知
+    [notificationcenter addObserver:self selector:@selector(selectedMeterNot:) name:@"selectedMeter" object:@"selectedMeter"];
+}
+
+- (void)setNavItem{
+    UIImageView *loginImageView = [[UIImageView alloc]initWithImage:[UIImage imageNamed:@"big_background"]];
+    loginImageView.frame = self.view.frame;
+    [self.view addSubview:loginImageView];
+    
+    NavigationBarView *navigationBarView = [[NavigationBarView alloc]initWithFrame:AdaptCGRectMake(0, 0, 320, 64)];
+    navigationBarView.title_Lable.text = @"当日用能概况";
+    [navigationBarView addSubview:navigationBarView.navigationBarButton];
+    [navigationBarView. navigationBarButton addTarget:self action:@selector(backClick) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:navigationBarView];
+}
+
+//底视图
+- (void)addScroAndTime{
+    myscrollview = [[UIScrollView alloc ] initWithFrame:AdaptCGRectMake(0, 90, 320, 568-100)];
+    myscrollview.directionalLockEnabled = YES; //只能一个方向滑动
+    myscrollview.pagingEnabled = NO; //是否翻页
+    myscrollview.backgroundColor = [UIColor clearColor];
+    myscrollview.showsVerticalScrollIndicator =NO; //垂直方向的滚动指示
+    myscrollview.indicatorStyle = UIScrollViewIndicatorStyleWhite;//滚动指示的风格
+    myscrollview.showsHorizontalScrollIndicator = NO;//水平方向的滚动指示
+    myscrollview.bounces=NO;
+    myscrollview.delegate = self;
+    //    具体高待定
+    CGSize newSize = CGSizeMake(self.view.frame.size.width, 180);
+    [myscrollview setContentSize:newSize];
+    [self.view addSubview:myscrollview];
+    
+    timeLable = [[UILabel alloc]initWithFrame:AdaptCGRectMake(0, 65, 320, 16)];
+    timeLable.textColor = [UIColor whiteColor];
+    
+    
+    NSDateFormatter *formatter = [[NSDateFormatter alloc]init];
+    [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    
+    timeLable.text = [NSString stringWithFormat:@"   当前时间： %@",[formatter stringFromDate:[NSDate date]]];
+    timeLable.font = [UIFont systemFontOfSize:14];
+    timeLable.backgroundColor = [UIColor colorWithWhite:0.6 alpha:0.2];
+    
+    [self.view addSubview:timeLable];
+}
+
+//筛选后获取的参数通知
+- (void)selectedMeterNot:(NSNotification *)not{
+    allMetersDataArray = [not.userInfo objectForKey:@"selectedMeters"];
+    nameArr = [not.userInfo objectForKey:@"nameArr"];
+    if (allMetersDataArray.count > 0) {
+        userDefaults= [NSUserDefaults standardUserDefaults];
+        //存储时，除NSNumber类型使用对应的类型意外，其他的都是使用setObject:forKey:
+        [userDefaults setObject:allMetersDataArray forKey:@"selectedMeters"];
+        [userDefaults setObject:nameArr forKey:@"nameArr"];
+    }
+    
+    [self loadDataTime];
+    
+}
+//刷新时间获取
+- (void)loadDataTime{
+    NSString *url = [NSString stringWithFormat:@"%@/PhoneInfo/GetReflashState/",JFENERGYMANAGER_IP];
+
+    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString: url]];
+    AFHTTPRequestOperation *operation = [[AFHTTPRequestOperation alloc] initWithRequest:request];
+    [operation setCompletionBlockWithSuccess:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSString *requestTmp = [NSString stringWithString:operation.responseString];
+        requestTmp=[requestTmp stringByReplacingOccurrencesOfString:@"'"withString:@"\""];
+        //加载数据
+        [self loadData];
+        NSError *error;
+        SBJSON *sbjson=[[SBJSON alloc]init];
+        //用对象解析string
+        reflashTime = [sbjson objectWithString:requestTmp error:&error];
+        
+        int CurrentMeasuretime = [reflashTime[@"CurrentMeasure"] intValue];
+        //污染气体排放
+        //监测
+        if (!_timer2) {
+            _timer2 = [NSTimer scheduledTimerWithTimeInterval:CurrentMeasuretime target:self selector:@selector(doTime2) userInfo:nil repeats:YES];
+        }
+        
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"提示" message:@"无网络或连接不到服务器！" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+        [alertView show];
+    }];
+    [operation start];
+    
+    
+}
+//监测
+-(void)doTime2{
+    [self loadData];
+}
+
+#pragma mark 再取出保存的cookie重新设置cookie
+- (void)setCoookie
+{
+    //取出保存的cookie
+    userDefaults = [NSUserDefaults standardUserDefaults];
+    //对取出的cookie进行反归档处理
+    NSArray *cookies = [NSKeyedUnarchiver unarchiveObjectWithData:[userDefaults objectForKey:@"cookie"]];
+    
+    if (cookies) {
+        //设置cookie
+        NSHTTPCookieStorage *cookieStorage = [NSHTTPCookieStorage sharedHTTPCookieStorage];
+        for (id cookie in cookies) {
+            [cookieStorage setCookie:(NSHTTPCookie *)cookie];
+        }
+    }else{
+    }
+    
+    //打印cookie，检测是否成功设置了cookie
+    NSArray *cookiesA = [[NSHTTPCookieStorage sharedHTTPCookieStorage] cookies];
+    for (NSHTTPCookie *cookie in cookiesA) {
+        cookieString = [cookie.name stringByAppendingFormat:@"=%@",cookie.value];
+    }
+}
+//下载
+- (void)loadData{
+    [self setCoookie];
+    tableDataArray = [NSMutableArray array];
+    /*allMetersDataArray 总数据*/
+    
+    NSMutableArray *allDataArr = [NSMutableArray array];
+    for (NSDictionary *dicc in nameArr) {
+        NSMutableArray *array = [NSMutableArray array];
+        NSDictionary *dic = @{@"enterid":dicc[@"id"],@"measureList":array};
+        
+        for (NSDictionary *ddic in allMetersDataArray) {
+            NSDictionary *dddd = @{@"insiecpath":ddic[@"insiecpath"],@"insiecpath_unit":ddic[@"insiecpath_unit"] ,@"maxTick":ddic[@"maxTick"],@"text":ddic[@"text"],@"totiecpath":ddic[@"totiecpath"],@"totiecpath_unit":ddic[@"totiecpath_unit"],@"wtid":ddic[@"id"]};
+            
+            if ([dicc[@"id"] isEqual:ddic[@"enterid"]]) {
+                if ([array containsObject:dddd]!=YES) {
+                    [array addObject:dddd];
+                }
+            }
+        }
+//        删除多余
+        NSArray *yyyy = dic[@"measureList"];
+        if (yyyy.count!=0) {
+            [allDataArr addObject:dic];
+        }
+    }
+    
+    NSError *parseError = nil;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:allDataArr options:NSJSONWritingPrettyPrinted error:&parseError];
+    NSString* jsonstr=[[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    NSString *urlStr = [NSString stringWithFormat:@"%@/PhoneInfo/GetCurrentMeasureData/",JFENERGYMANAGER_IP];
+    
+    NSDictionary *paramsDiction  = @{@"wtidsAndEnertys":jsonstr,@"cookie":cookieString};
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.responseSerializer = [AFHTTPResponseSerializer serializer];
+    [manager POST:urlStr parameters:paramsDiction success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSString *requestTmp = [NSString stringWithString:operation.responseString];
+        if ([requestTmp containsString:@"error"] == YES) {
+            NSString *strr = [userDefaults objectForKey:@"loginState"];
+            LoginAccountViewController *loginAccountViewController;
+            //            重登方式
+            if ([strr isEqual:@"YES"]) {
+                NSString *str = [userDefaults objectForKey:@"password"];
+                NSString *str1 = [userDefaults objectForKey:@"login"];
+                if (![str1 isEqual:@""]&&![str isEqual:@""]) {
+                    [self loadDate:str1 and:str];
+                }else{
+                    [userDefaults setObject:@"NNNN" forKey:@"NNNN"];
+                    [userDefaults setObject:@"0" forKey:@"nologin"];
+                    
+                    loginAccountViewController = [[LoginAccountViewController alloc]init];
+                    [self.navigationController pushViewController:loginAccountViewController animated:YES];
+                }
+            }else{
+                [userDefaults setObject:@"NNNN" forKey:@"NNNN"];
+                [userDefaults setObject:@"0" forKey:@"nologin"];
+                
+                loginAccountViewController = [[LoginAccountViewController alloc]init];
+                [self.navigationController pushViewController:loginAccountViewController animated:YES];
+            }
+            
+        }else{
+        
+        
+        NSString *str = [[NSString alloc]initWithData:responseObject encoding:NSUTF8StringEncoding];
+        str = [str stringByReplacingOccurrencesOfString:@"'"withString:@"\""];
+        NSError *error;
+        SBJSON *sbjson=[[SBJSON alloc]init];
+        //用对象解析string
+        tableDataArray = [sbjson objectWithString:str error:&error];
+        
+        [self addTitleAndButtonView];
+        }
+    } failure:^(AFHTTPRequestOperation * operation, NSError *error ) {
+    }];
+}
+//获取状态
+-(void)loadDate:(NSString*)phone and:(NSString*)password{
+    NSString *passwordMD5 =[password md5HexDigest:password];
+    //POST请求
+    NSString *url = [NSString stringWithFormat:@"%@/PhoneInfo/login/",JFENERGYMANAGER_IP];
+
+    NSDictionary *parameters=@{@"username":phone,@"pwd":passwordMD5};
+    ////2 创建一个请求管理器
+    AFHTTPRequestOperationManager *operationManager=[AFHTTPRequestOperationManager manager];
+    //3 设置请求可以接受内容的样式
+    operationManager.responseSerializer.acceptableContentTypes=[NSSet setWithObject:@"text/html"];
+    
+    // 4 管理器发送POST请求
+    [operationManager POST:url parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        
+            //获取cookie
+            /*把cookie进行归档并转换为NSData类型
+             注意：cookie不能直接转换为NSData类型，否则会引起崩溃。
+             所以先进行归档处理，再转换为Data*/
+            NSData *cookiesData = [NSKeyedArchiver archivedDataWithRootObject: [[NSHTTPCookieStorage sharedHTTPCookieStorage] cookies]];
+            
+            //存储归档后的cookie
+            userDefaults = [NSUserDefaults standardUserDefaults];
+            [userDefaults setObject: cookiesData forKey: @"cookie"];
+            
+            [self deleteCookie];
+            
+            
+            [self loadDataTime];
+            
+            
+        
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"提示" message:@"无网络或连接不到服务器！" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+        [alertView show];
+    }];
+    
+    
+    
+}
+
+#pragma mark 删除cookie
+- (void)deleteCookie
+{
+    NSHTTPCookieStorage *cookieStorage = [NSHTTPCookieStorage sharedHTTPCookieStorage];
+    NSArray *cookies = [[NSHTTPCookieStorage sharedHTTPCookieStorage] cookies];
+    
+    //删除cookie
+    for (NSHTTPCookie *tempCookie in cookies) {
+        [cookieStorage deleteCookie:tempCookie];
+    }
+    
+}
+
+//加载表
+- (void)addTitleAndButtonView{
+    for (UIView *view in myscrollview.subviews) {
+        [view removeFromSuperview];
+    }
+    int hhhh = 0;
+    for (int b = 0; b < tableDataArray.count; b ++) {
+        NSArray *array = [tableDataArray[b] objectForKey:@"dataList"];
+        int num = (int)array.count;
+        if (array.count%2 == 1) {
+            num = num + 1;
+        }
+        if (b>0) {
+            NSArray *array11 = [tableDataArray[b-1] objectForKey:@"dataList"];
+            int numm = (int)array11.count; // 循环次数
+            if (numm%2==1) {
+                numm = numm + 1;
+            }
+             hhhh = hhhh + numm;
+        }
+        timeLable.text = [NSString stringWithFormat:@"   更新时间:%@",tableDataArray[0][@"datatime"]];
+        
+        UILabel *watchLableView = [[UILabel alloc]initWithFrame:AdaptCGRectMake(10,b*20+4 + 160*hhhh/2, 100, 16)];
+                    float str = [tableDataArray[b][@"enterid"] floatValue];;
+                    for (NSDictionary *dic in nameArr) {
+                        NSInteger ii = [dic[@"id"] integerValue];
+                        if (str == ii) {
+                            watchLableView.text =[NSString stringWithFormat:@"%@仪表",dic[@"name"]];
+                        }
+                    }
+                    watchLableView.font = [UIFont systemFontOfSize:14];
+                    watchLableView.textColor = [UIColor whiteColor];
+                    [myscrollview addSubview:watchLableView];
+        
+        UIView *fenView = [[UIView alloc]initWithFrame:AdaptCGRectMake(0, (b+1)*20 + 160*hhhh/2, 320, num/2*160)];
+        fenView.tag = b+1;
+        fenView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.15];
+        [myscrollview addSubview:fenView];
+        
+        int btag = 0;
+        int num1 = (int)array.count / 2 + 1; // 循环次数
+        for (int i = 0; i < num1; i ++) {
+            int max = 0;
+            if (i == num1 - 1) {
+                max = array.count % 2;// 如果是最后一个循环，就取余数
+            }else {
+                max = 2;// 不是最后一个循环，就初始化3个对象
+            }
+            
+            for (int j = 0; j < max; j ++) {
+                watchView = [[UIView alloc]initWithFrame:AdaptCGRectMake(j * 160,i * 160, 160, 160)];
+                [fenView addSubview:watchView];
+                
+                watchFaceView = [[WatchFaceView alloc]initWithFrame:AdaptCGRectMake(5, 0, 150, 150)];
+                watchFaceView.unitsLable.text = array[btag][@"insiecpath_unit"];
+                //                总量及其单位
+                if ([array[btag][@"totIecpathValue"]  isEqual:@""]) {
+                    array[btag][@"totIecpathValue"] = @"0.00";
+                }
+                float str1 = [array[btag][@"totIecpathValue"] floatValue];
+                NSString*strrvalue=[NSString stringWithFormat:@"%.2f",str1];
+                watchFaceView.resultLable.text = [strrvalue stringByAppendingFormat:@"%@",array[btag][@"totiecpath_unit"]];
+                //                表名
+                watchFaceView.tableNameLable.text = array[btag][@"toolName"];
+                //               进度条颜色
+                [watchFaceView.progress setProgressStrokeColor:[UIColor blueColor]];
+                //                刻度值
+                watchFaceView.imax = [array[btag][@"maxTick"] integerValue];
+                [self addgraduate];
+                
+                //                进度
+                
+                float vbb = [array[btag][@"insIecpathValue"] floatValue];
+                
+                float vpp = [array[btag][@"maxTick"] floatValue];
+                float v = vbb/vpp;
+                v=v*(260.0/270.0);
+                [watchFaceView.progress setProgress:v-0.01 Animated:YES];
+                //                中心文字
+                
+                
+                if ([array[btag][@"insIecpathValue"] isEqual:@""]) {
+                    array[btag][@"insIecpathValue"] = @"0.00";
+                }
+                
+                float str2 = [array[btag][@"insIecpathValue"] floatValue];
+                NSString*strrvalue2=[NSString stringWithFormat:@"%.2f",str2];
+                
+                watchFaceView.progress.progressLabel.text = strrvalue2;
+                
+                [watchView addSubview:watchFaceView];
+                btag ++;
+            }
+            
+        }
+    }
+    
+    UIView *lastView = [myscrollview.subviews lastObject];
+    float y = lastView.frame.size.height+lastView.frame.origin.y;
+    
+    if (y > myscrollview.frame.size.height) {
+        CGSize newSize = CGSizeMake(myscrollview.frame.size.width, y+100/(320/SCREEN_WIDTH));
+        [myscrollview setContentSize:newSize];
+    }
+    
+    
+}
+//表其他数据换算
+- (void)addgraduate{
+    watchFaceView.topGraduateLable = [[UILabel alloc]initWithFrame:AdaptCGRectMake(47, 5, 25, 13)];
+    watchFaceView.topGraduateLable.text = [NSString stringWithFormat:@"%d",(int)watchFaceView.imax/2];
+    watchFaceView.topGraduateLable.textColor = [UIColor whiteColor];
+    watchFaceView.topGraduateLable.textAlignment = NSTextAlignmentCenter;
+    watchFaceView.topGraduateLable.font = [UIFont systemFontOfSize:11];
+    [watchFaceView.tableView addSubview:watchFaceView.topGraduateLable];
+    NSInteger vvv = watchFaceView.imax/6;
+    
+    NSArray *lrArray1 = @[[NSString stringWithFormat:@"%d",vvv*2],[NSString stringWithFormat:@"%d",(int)vvv*4]];
+    for (int i = 0; i < 2; i ++) {
+        watchFaceView.fourGraduateLable = [[UILabel alloc]initWithFrame:AdaptCGRectMake(17+i*60, 20, 25, 13)];
+        watchFaceView.fourGraduateLable.textColor = [UIColor whiteColor];
+        watchFaceView.fourGraduateLable.text = lrArray1[i];
+        watchFaceView.fourGraduateLable.textAlignment = NSTextAlignmentCenter;
+        watchFaceView.fourGraduateLable.font = [UIFont systemFontOfSize:11];
+        [watchFaceView.tableView addSubview:watchFaceView.fourGraduateLable];
+    }
+    
+    NSArray *lrArray2 = @[@"0",[NSString stringWithFormat:@"%d",(int)watchFaceView.imax]];
+    for (int i = 0; i < 2; i ++) {
+        watchFaceView.ffourGraduateLable = [[UILabel alloc]initWithFrame:AdaptCGRectMake(13+i*62, 87, 25, 13)];
+        watchFaceView.ffourGraduateLable.text = lrArray2[i];
+        watchFaceView.ffourGraduateLable.textColor = [UIColor whiteColor];
+        watchFaceView.ffourGraduateLable.textAlignment = NSTextAlignmentCenter;
+        watchFaceView.ffourGraduateLable.font = [UIFont systemFontOfSize:11];
+        [watchFaceView.tableView addSubview:watchFaceView.ffourGraduateLable];
+    }
+    
+    NSArray *lrArray = @[[NSString stringWithFormat:@"%d",(int)vvv],[NSString stringWithFormat:@"%d",(int)vvv*5]];
+    for (int i = 0; i < 2; i ++) {
+        watchFaceView.lrGraduateLable = [[UILabel alloc]initWithFrame:AdaptCGRectMake(3+88*i, 53, 25, 14)];
+        watchFaceView.lrGraduateLable.text = lrArray[i];
+        watchFaceView.lrGraduateLable.textColor = [UIColor whiteColor];
+        watchFaceView.lrGraduateLable.textAlignment = NSTextAlignmentCenter;
+        watchFaceView.lrGraduateLable.font = [UIFont systemFontOfSize:11];
+        [watchFaceView.tableView addSubview:watchFaceView.lrGraduateLable];
+    }
+    
+}
+//选择
+- (void)backClick{
+    chooseViewController = [[ChooseOfMonitorViewController alloc]init];
+    //推出隐藏tabbar
+    if ([tabbarVC isKindOfClass:[RDVTabBarController class]])
+    {
+        tabbarVC.tabBar.hidden = YES;
+    }
+    UINavigationController *nav = [[UINavigationController alloc]initWithRootViewController:chooseViewController];
+    [self.navigationController presentViewController:nav animated:YES completion:nil];
+}
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+ #pragma mark - Navigation
+ 
+ // In a storyboard-based application, you will often want to do a little preparation before navigation
+ - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+ // Get the new view controller using [segue destinationViewController].
+ // Pass the selected object to the new view controller.
+ }
+ */
+
+@end

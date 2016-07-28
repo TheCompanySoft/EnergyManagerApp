@@ -1,0 +1,63 @@
+//
+//  QCollectionViewCell.m
+//  JinfengEnergApp
+//
+//  Created by BlackChen on 16/1/5.
+//  Copyright © 2016年 BlackChen. All rights reserved.
+//
+
+#import "QCollectionViewCell.h"
+
+@implementation QCollectionViewCell{
+    
+}
+
+- (id)initWithFrame:(CGRect)frame{
+    self = [super initWithFrame:frame];
+    if (self) {
+        _button = [UIButton buttonWithType:UIButtonTypeCustom];
+        _button.frame = AdaptCGRectMake(13, 3, 80, 24);
+        _button.layer.cornerRadius = _button.frame.size.height/2;
+        _button.layer.masksToBounds = YES;
+        [_button addTarget:self action:@selector(cellButtonTouch:) forControlEvents:UIControlEventTouchUpInside];
+        _button.titleLabel.numberOfLines = 2;
+        _button.titleLabel.textAlignment = NSTextAlignmentCenter;
+        _button.titleLabel.font = [UIFont systemFontOfSize:12];
+        [self addSubview:_button];
+    }
+    return self;
+}
+- (void)cellButtonTouch:(UIButton*)sender{
+    //TODO: 添加是否继续可选,在理一遍逻辑,不选择的时候删除对应数据,选择不可继续选的数据加载到分析界面
+    NSDictionary *dic;
+    if (sender.selected!=YES) {
+        sender.selected = YES;
+        //        选中以后如果 group 是 0,不继续选择
+        if ([self.strid isEqual:@"0"]) {
+            [sender setBackgroundImage:[UIImage imageNamed:@"select_yellow"] forState:UIControlStateNormal];
+            [sender setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+            
+        }else{
+            [sender setBackgroundImage:[UIImage imageNamed:@"select2_bg"] forState:UIControlStateNormal];
+            [sender setTitleColor:[UIColor colorWithRed:53/255.0 green:170/255.0 blue:0.0 alpha:1] forState:UIControlStateNormal];
+            
+        }
+        dic = @{@"id":self.stridtag,@"pid":self.strpidtag,@"text":sender.titleLabel.text,@"tab":@"1",@"group":self.strid,@"info":self.infoDic};
+        
+    }else{
+        
+        [sender setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        [sender setBackgroundImage:nil forState:UIControlStateNormal];
+        dic = @{@"id":self.stridtag,@"pid":self.strpidtag,@"text":sender.titleLabel.text,@"tab":@"0",@"group":self.strid,@"info":self.infoDic};
+        
+        sender.selected = NO;
+    }
+    
+    //创建一个消息对象
+    NSNotification * notice = [NSNotification notificationWithName:@"selectedItem" object:@"selected" userInfo:@{@"selectedItem":dic}];
+    //发送消息
+    [[NSNotificationCenter defaultCenter]postNotification:notice];
+    
+}
+
+@end

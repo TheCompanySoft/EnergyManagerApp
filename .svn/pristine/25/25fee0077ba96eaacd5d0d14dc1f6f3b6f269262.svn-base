@@ -1,0 +1,177 @@
+//
+//  MainAnalysisViewController.m
+//  JinfengEnergApp
+//
+//  Created by BlackChen on 15/12/25.
+//  Copyright © 2015年 BlackChen. All rights reserved.
+//
+
+#import "MainAnalysisViewController.h"
+#import "AnalysisViewController.h"
+#import "AreaAnalysisViewController.h"
+#import "EnergyAnalysisViewController.h"
+#import "ProductAnalysisViewController.h"
+#import "HomeViewController.h"
+#import "MonitorViewController.h"
+
+@interface MainAnalysisViewController (){
+    UIViewController *analysisViewController,*areaAnalysisViewController,*energyAnalysisViewController,*productAnalysisViewController,*homeViewController,*monitorViewController;
+    
+    RDVTabBarController *tabbarVC;
+}
+
+@end
+
+@implementation MainAnalysisViewController
+- (void)viewWillAppear:(BOOL)animated{
+    self.navigationController.navigationBarHidden = YES;
+}
+
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    AppDelegate *delegate = (AppDelegate *)[UIApplication sharedApplication].delegate;
+    tabbarVC = (RDVTabBarController *)delegate.window.rootViewController;
+
+    
+    //获取通知中心单例对象
+    NSNotificationCenter * center = [NSNotificationCenter defaultCenter];
+    //添加当前类对象为一个观察者，name和object设置为nil，表示接收一切通知
+    [center addObserver:self selector:@selector(noticeeeee:) name:@"QIEHUAN" object:@"QIEHUAN"];
+    
+    analysisViewController = [[AnalysisViewController alloc]init];
+    areaAnalysisViewController = [[AreaAnalysisViewController alloc]init];
+    energyAnalysisViewController = [[EnergyAnalysisViewController alloc]init];
+    productAnalysisViewController = [[ProductAnalysisViewController alloc]init];
+    homeViewController = [[HomeViewController alloc]init];
+    monitorViewController = [[MonitorViewController alloc]init];
+    
+    [self addChildViewController:homeViewController];
+    [self addChildViewController:monitorViewController];
+    [self addChildViewController:analysisViewController];
+    [self addChildViewController:areaAnalysisViewController];
+    [self addChildViewController:energyAnalysisViewController];
+    [self addChildViewController:productAnalysisViewController];
+    
+    //    switch (tabbarVC.selectedIndex) {
+    //        case 0:
+    //        {
+    //            [self.view addSubview:homeViewController.view];
+    //            self.currentVC = homeViewController;
+    //        }
+    //            break;
+    //        case 1:
+    //        {
+    //            [self.view addSubview:monitorViewController.view];
+    //            self.currentVC = monitorViewController;
+    //        }
+    //            break;
+    //        case 2:
+    //        {
+    //            [self.view addSubview:analysisViewController.view];
+    //            self.currentVC = analysisViewController;
+    //        }
+    //            break;
+    //
+    //        default:
+    //        {
+    [self.view addSubview:analysisViewController.view];
+    self.currentVC = analysisViewController;
+    //        }
+    //            break;
+    //    }
+    //
+    
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(tap)];
+    [self.view addGestureRecognizer:tap];
+}
+
+- (void)tap{
+    if (tabbarVC.otherChoiceView) {
+        [tabbarVC.otherChoiceView removeFromSuperview];
+        tabbarVC.viewisHidden = NO;
+    }
+}
+
+- (void)noticeeeee:(NSNotification *)not{
+    NSString *str = [not.userInfo objectForKey:@"QIEHUAN"];
+    NSInteger tt = [str integerValue];
+    UIButton *sender = [tabbarVC.otherChoiceView viewWithTag:tt];
+    
+    //  点击处于当前页面的按钮,直接跳出
+    if ((self.currentVC == analysisViewController && sender.tag == 0)||(self.currentVC == areaAnalysisViewController && sender.tag == 1)||(self.currentVC == energyAnalysisViewController && sender.tag == 2)||(self.currentVC == productAnalysisViewController && sender.tag == 3)) {
+        return;
+        
+    }else{
+        switch (sender.tag) {
+            case 0:
+            {
+                [self replaceController:self.currentVC newController:analysisViewController];
+            }
+                break;
+            case 1:
+            {
+                [self replaceController:self.currentVC newController:areaAnalysisViewController];
+            }
+                break;
+            case 2:
+            {
+                [self replaceController:self.currentVC newController:energyAnalysisViewController];
+            }
+                break;
+            case 3:
+            {
+                [self replaceController:self.currentVC newController:productAnalysisViewController];
+            }
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+//  切换各个标签内容
+- (void)replaceController:(UIViewController *)oldController newController:(UIViewController *)newController
+{
+    /**
+     *            着重介绍一下它
+     *  transitionFromViewController:toViewController:duration:options:animations:completion:
+     *  fromViewController      当前显示在父视图控制器中的子视图控制器
+     *  toViewController        将要显示的姿势图控制器
+     *  duration                动画时间(这个属性,old friend 了 O(∩_∩)O)
+     *  options                 动画效果(渐变,从下往上等等,具体查看API)
+     *  animations              转换过程中得动画
+     *  completion              转换完成
+     */
+    [self addChildViewController:newController];
+    [self transitionFromViewController:oldController toViewController:newController duration:2.0 options:UIViewAnimationOptionAllowAnimatedContent animations:nil completion:^(BOOL finished) {
+        if (finished) {
+            [oldController willMoveToParentViewController:nil];
+            [oldController removeFromParentViewController];
+            [newController didMoveToParentViewController:self];
+            [oldController.view removeFromSuperview];
+            self.currentVC = newController;
+        }else{
+            self.currentVC = oldController;
+        }
+        
+    }];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+ #pragma mark - Navigation
+ 
+ // In a storyboard-based application, you will often want to do a little preparation before navigation
+ - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+ // Get the new view controller using [segue destinationViewController].
+ // Pass the selected object to the new view controller.
+ }
+ */
+
+@end

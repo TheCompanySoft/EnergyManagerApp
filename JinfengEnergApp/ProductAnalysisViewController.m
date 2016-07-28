@@ -1,0 +1,245 @@
+//
+//  ProductAnalysisViewController.m
+//  JinfengEnergApp
+//
+//  Created by BlackChen on 15/12/11.
+//  Copyright © 2015年 BlackChen. All rights reserved.
+//
+
+#import "ProductAnalysisViewController.h"
+#import "FinishedProductView.h"
+#import "ChoseOfAnalysisViewController.h"
+#import "ProductInfo.h"
+#import "ProductListCell.h"
+@interface ProductAnalysisViewController ()<UITableViewDataSource,UITableViewDelegate,Myprotocol>{
+    UITableView *_tableView;//表
+    NSMutableArray*_productEnergyInfoArray;//对象数组
+    NSMutableArray*_dateArray;//日期数组
+    NSMutableArray*_specificArray;
+    NSMutableArray*_standardSpecificArray;
+    NSMutableArray*_percentArray;//比例数组
+     NSMutableArray*_averageArray;//平均值
+    FinishedProductView *_myView;//曲线视图所在View
+     MBProgressHUD *_HUD;//提示
+    //标签
+    RDVTabBarController *tabbarVC;
+}
+
+@end
+@implementation ProductAnalysisViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //数组初始化
+    _productEnergyInfoArray=[NSMutableArray array];
+    _dateArray=[NSMutableArray array];
+    _specificArray=[NSMutableArray array];
+    _percentArray=[NSMutableArray array];
+    _standardSpecificArray=[NSMutableArray array];
+    _averageArray=[NSMutableArray array];
+    
+        //添加背景
+    UIImageView *loginImageView = [[UIImageView alloc]initWithImage:[UIImage imageNamed:@"big_background"]];
+    [self.navigationController.navigationBar setBackgroundImage:[UIImage imageNamed:@"nav_bg"] forBarMetrics:UIBarMetricsDefault];
+
+    loginImageView.frame = self.view.frame;
+    [self.navigationController.navigationBar setTitleTextAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:16],NSForegroundColorAttributeName:[UIColor whiteColor]}];
+    [self.view addSubview:loginImageView];
+
+   _arealabel=[[UILabel alloc]initWithFrame:AdaptCGRectMake(0, 80,320, 25)];
+    _arealabel.text=@"企业";
+    _arealabel.textColor=[UIColor whiteColor];
+    _arealabel.textAlignment=NSTextAlignmentCenter;
+    _arealabel.backgroundColor=[UIColor colorWithWhite:1 alpha:0.2];
+    _arealabel.font=[UIFont systemFontOfSize:14];
+    [self.view addSubview:_arealabel];
+    //表头
+    NSArray *arrcanshu=@[@"日期",@"单耗(标煤)",@"标准单耗",@"比例"];
+    for (int i=0;i<4; i++) {
+       
+        UILabel *label=[[UILabel alloc]initWithFrame:CGRectMake([UIUtils getWindowWidth]/4*i+0.5*i, 106*[UIUtils getWindowHeight]/568, [UIUtils getWindowWidth]/4-0.6, 26*[UIUtils getWindowHeight]/568)];
+        label.text=arrcanshu[i];
+        label.textColor=[UIColor whiteColor];
+        label.textAlignment=NSTextAlignmentCenter;
+        label.backgroundColor=[UIColor colorWithRed:137.0/255 green:196/255.0 blue:115/255.0 alpha:1];
+        label.font=[UIFont systemFontOfSize:14];
+        [self.view addSubview:label];
+    }
+    //表
+    _tableView =[[UITableView alloc]initWithFrame:AdaptCGRectMake(0, 132, 320, 155) style:UITableViewStylePlain];
+    _tableView.delegate=self;
+    _tableView.dataSource=self;
+    _tableView.separatorColor=[UIColor clearColor];
+    _tableView.backgroundColor=[UIColor clearColor];
+    _tableView.bounces=NO;
+    [self.view addSubview:_tableView];
+    UIView *view1=[[UIView alloc]initWithFrame:AdaptCGRectMake(0,300, 320, 18)];
+    view1.backgroundColor=[UIColor colorWithWhite:0.2 alpha:0.3];
+    [self.view addSubview:view1];
+    NSArray *colors = @[@"yellow",@"red"];
+    NSArray *texts = @[@"单耗(千克标准煤)",@"标准单耗(千克标准煤)"];
+    for (int i = 0; i < 2; i ++) {UIImage *image=[UIImage imageNamed:colors[i]];
+        UIImageView*  pointImageView = [[UIImageView alloc]initWithFrame:AdaptCGRectMake(20 + i*100, 4,8, 8)];
+        [pointImageView setImage:image];
+        [view1 addSubview:pointImageView];
+        UILabel *lable=[[UILabel alloc]initWithFrame:AdaptCGRectMake(32 + i*100, 0, 100, 16)];
+        lable.text = texts[i];
+        lable.font = [UIFont systemFontOfSize:12];
+        lable.textColor = [UIColor whiteColor];
+        [view1 addSubview:lable];}
+    //曲线视图初始化
+    _myView=[[FinishedProductView alloc]initWithFrame:AdaptCGRectMake(0, 320, 320, 180)];
+    [self.view addSubview:_myView];
+    //设定导航栏
+    [self dsetNavigationBar];
+    
+}
+
+//设定导航栏
+- (void)dsetNavigationBar
+{
+    AppDelegate *delegate = (AppDelegate *)[UIApplication sharedApplication].delegate;
+    tabbarVC = (RDVTabBarController *)delegate.window.rootViewController;
+    
+    NavigationBarView *navigationBarView = [[NavigationBarView alloc]initWithFrame:AdaptCGRectMake(0, 0, 320, 64)];
+    navigationBarView.title_Lable.text = @"产品能耗分析";
+    [navigationBarView addSubview:navigationBarView.navigationBarButton];
+    [navigationBarView.navigationBarButton addTarget:self action:@selector(ChooseClickd:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:navigationBarView];
+}
+
+//跳转
+- (void)ChooseClickd:(UIButton *)sender{
+    [tabbarVC.otherChoiceView removeFromSuperview];
+    tabbarVC.viewisHidden = NO;
+    
+    ChoseOfAnalysisViewController *coseVC=[[ChoseOfAnalysisViewController alloc]init];
+    coseVC.delegat=self;
+    UINavigationController *nav=[[UINavigationController alloc]initWithRootViewController:coseVC];
+    [self presentViewController:nav animated:YES completion:nil];
+    
+}
+
+//加载数据获取参数
+-(void)loadDate:(NSArray*)arr{
+     _HUD=[MBProgressHUD show:MBProgressHUDModeIndeterminate message:@"加载中..." customView:self.view];
+    //POST请求
+    NSString *url = [NSString stringWithFormat:@"%@/NxzxProductsConsumecontrastStandard/GetNxzxProductsConsumecontrastStandardData/",JFENERGYMANAGER_IP];
+
+ NSArray*dataArray=@[@{@"pagetype":@"",@"parameters":arr[2],@"starttime":arr[0],@"endtime":arr[1],@"savetime":@"",@"scopeday":@"",@"scopehours":@""}];
+    NSError *parseError = nil;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dataArray options:NSJSONWritingPrettyPrinted error:&parseError];
+    NSString* str=[[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    NSDictionary *parameters = @{@"data":str};
+    ////2 创建一个请求管理器
+    AFHTTPRequestOperationManager *operationManager=[AFHTTPRequestOperationManager manager];
+    //3 设置请求可以接受内容的样式
+    operationManager.responseSerializer.acceptableContentTypes=[NSSet setWithObject:@"text/html"];
+    // 4 管理器发送POST请求
+    [operationManager POST:url parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSString *str=[responseObject objectForKey:@"chartdata"];
+        str=[str stringByReplacingOccurrencesOfString:@"'"withString:@"\""];
+        NSError*error;
+        SBJSON*sbjson=[[SBJSON alloc]init];
+        //用对象解析string
+        NSArray*array=[sbjson objectWithString:str error:&error];
+        if (array.count>0) {
+            if (_productEnergyInfoArray.count>0) {
+                [_productEnergyInfoArray removeAllObjects];
+                [_specificArray removeAllObjects];
+                [_dateArray removeAllObjects];
+                [_standardSpecificArray removeAllObjects];
+                 [_percentArray removeAllObjects];
+                 [_averageArray removeAllObjects];
+            }
+            for (NSDictionary *dic in array) {
+                
+                ProductInfo *productinfo=[[ProductInfo alloc]initWithDictionary:dic];
+                [_productEnergyInfoArray addObject:productinfo];
+                // 单耗(千克标准煤)
+                if ([productinfo.varid isEqualToString:@"0"]) {
+                    [_specificArray addObject:productinfo.varvalue];
+                    [_dateArray addObject:productinfo.dtsdate];
+                }
+                //标准单耗(千克标准煤)
+                if ([productinfo.varid isEqualToString:@"1"]) {
+                    [_standardSpecificArray addObject:productinfo.varvalue];
+                }
+                //比例
+                if ([productinfo.varid isEqualToString:@"2"]) {
+                    [_percentArray addObject:productinfo.varvalue];
+                }
+                //平均
+                if ([productinfo.varid isEqualToString:@"3"]) {
+                    [_averageArray addObject:productinfo.varvalue];
+                    
+                }
+                
+            }
+            //曲线View调用
+            [_myView getdateArray:_dateArray and:_standardSpecificArray and:_specificArray];
+            [_HUD hide:YES afterDelay:0.3f];
+            [_tableView reloadData];
+        }else{
+            [_HUD hide:YES afterDelay:0.3f];
+            UIAlertView*_alert=[[UIAlertView alloc]initWithTitle:@"提示" message:@"当前时间没有数据" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+            [_alert show];
+        }
+        
+       
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        [_HUD hide:YES afterDelay:0.3f];
+        [self alertView];
+    }];
+}
+
+//警告
+- (void)alertView{
+    UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"提示" message:@"无网络或连接不到服务器！" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+    [alertView show];
+}
+#pragma mark UITableViewDelegate
+-(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return _specificArray.count;
+    
+}
+
+-(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
+    return 31.0*[UIUtils getWindowHeight]/568;
+}
+#pragma mark  UITableViewDataSource,
+-(UITableViewCell*)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    static NSString*cellid=@"cellid";
+    ProductListCell *cell=[tableView dequeueReusableCellWithIdentifier:cellid];
+    if (!cell) {
+        cell=[[ProductListCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellid];
+    }
+    cell.userInteractionEnabled=NO;
+    
+    [cell getspecificArray:_specificArray  and:_standardSpecificArray  and:_percentArray and:_dateArray and:indexPath.row];
+       return cell;
+}
+#pragma mark Myprotocol
+-(void)productArray:(NSArray *)arr{
+   
+    _arealabel.text=arr[3];
+    //调用加载
+    [self loadDate:arr];
+
+}
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

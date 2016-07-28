@@ -1,0 +1,37 @@
+//
+//  DataLabel.m
+//  JinfengEnergApp
+//
+//  Created by BlackChen on 16/1/29.
+//  Copyright © 2016年 BlackChen. All rights reserved.
+//
+
+#import "DataLabel.h"
+
+@implementation DataLabel
+
+- (instancetype)initWithFrame:(CGRect)frame{
+    self = [super initWithFrame:frame];
+    if (self) {
+        [self setContentView];
+    }
+    return self;
+}
+//设置内容视图
+- (void)setContentView{
+    self.numberOfLines = 0;//表示label可以多行显示
+    self.textAlignment = NSTextAlignmentLeft;
+    self.textColor = [UIColor whiteColor];
+    self.font = [UIFont systemFontOfSize:12];
+    self.numberOfLines = 2;
+}
+
+/*
+// Only override drawRect: if you perform custom drawing.
+// An empty implementation adversely affects performance during animation.
+- (void)drawRect:(CGRect)rect {
+    // Drawing code
+}
+*/
+
+@end

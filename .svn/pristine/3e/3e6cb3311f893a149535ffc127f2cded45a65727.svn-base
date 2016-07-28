@@ -1,0 +1,321 @@
+//
+//  EnergyAnalysisViewController.m
+//  JinfengEnergApp
+//
+//  Created by BlackChen on 15/12/11.
+//  Copyright © 2015年 BlackChen. All rights reserved.
+//
+
+#import "EnergyAnalysisViewController.h"
+#import "UIUtils.h"
+#import "EnergyChartListCell.h"
+#import "ConstituteAnalysisViewController.h"
+#import "imageAndTextView.h"
+#import "AFNetworking.h"
+#import "SBJSON.h"
+#import "TWRChart.h"
+#import "TWRChartView.h"
+#import "MBProgressHUD+Simple.h"
+@interface EnergyAnalysisViewController ()<UITableViewDataSource,UITableViewDelegate,Myprotocol>{
+    UITableView *_tableView;//表
+  MBProgressHUD *_HUD;//提示
+    NSMutableArray*_infoArray;//存放对象的数组
+    
+    //    饼状图,表格
+    NSMutableArray *values;//参数
+    NSMutableArray *colors;//颜色
+    NSMutableArray *energyBMs;//能源
+    NSMutableArray *precentArr;;//能源百分比
+    
+    RDVTabBarController *tabbarVC;
+    }
+@property (nonatomic, strong)TWRChartView *chartView;//动态环形View
+@end
+
+@implementation EnergyAnalysisViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //数组初始化
+    _infoArray=[NSMutableArray array];
+
+    //添加背景视图
+    UIImageView *loginImageView = [[UIImageView alloc]initWithImage:[UIImage imageNamed:@"big_background"]];
+    [self.navigationController.navigationBar setBackgroundImage:[UIImage imageNamed:@"nav_bg"] forBarMetrics:UIBarMetricsDefault];
+
+    loginImageView.frame = self.view.frame;
+    
+    [self.view addSubview:loginImageView];
+   //表的头
+    NSArray *arrcanshu=@[@"能源",@"单位",@"用量",@"标煤(kg)"];
+    for (int i=0;i<4; i++) {
+        UILabel *label=[[UILabel alloc]initWithFrame:AdaptCGRectMake(320.0/4*i+0.5*i, 80, 320.0/4-0.6, 25)];
+        label.text=arrcanshu[i];
+        label.textColor=[UIColor whiteColor];
+        label.textAlignment=NSTextAlignmentCenter;
+        label.backgroundColor=[UIColor colorWithRed:137.0/255 green:196/255.0 blue:115/255.0 alpha:1];
+        label.font=[UIFont systemFontOfSize:14];
+        [self.view addSubview:label];
+    }
+    //表
+    _tableView =[[UITableView alloc]initWithFrame:AdaptCGRectMake(0, 106, 320, 155) style:UITableViewStylePlain];
+    _tableView.delegate=self;
+    _tableView.dataSource=self;
+    _tableView.separatorColor=[UIColor clearColor];
+    _tableView.backgroundColor=[UIColor clearColor];
+    _tableView.bounces=NO;
+    [self.view addSubview:_tableView];
+//添加环形视图
+   [self addCircleView];
+    //导航栏
+    [self csetNavigationBar];
+}
+
+//设定导航栏
+- (void)csetNavigationBar
+{
+    AppDelegate *delegate = (AppDelegate *)[UIApplication sharedApplication].delegate;
+    tabbarVC = (RDVTabBarController *)delegate.window.rootViewController;
+    
+    NavigationBarView *navigationBarView = [[NavigationBarView alloc]initWithFrame:AdaptCGRectMake(0, 0, 320, 64)];
+    navigationBarView.title_Lable.text = @"能耗构成分析";
+    [navigationBarView addSubview:navigationBarView.navigationBarButton];
+
+    [navigationBarView.navigationBarButton addTarget:self action:@selector(ChooseClickc:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:navigationBarView];
+}
+//加载数据
+-(void)loadDate:(NSArray*)datearray {
+     _HUD=[MBProgressHUD show:MBProgressHUDModeIndeterminate message:@"加载中..." customView:self.view];
+    //POST请求
+    NSString *url=@"http://222.82.220.86:8003/EnergyComponentsAnalysis/GetEnergyComponentsAnalysisData/";
+  NSArray*dataArray=@[@{@"pagetype":@"",@"parameters":datearray[2],@"starttime":datearray[0],@"endtime":datearray[1],@"savetime":@"",@"scopeday":@"",@"scopehours":@""}];
+    NSError *parseError = nil;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dataArray options:NSJSONWritingPrettyPrinted error:&parseError];
+    NSString* str=[[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    NSDictionary *parameters = @{@"data":str};
+    ////2 创建一个请求管理器
+    AFHTTPRequestOperationManager *operationManager=[AFHTTPRequestOperationManager manager];
+    //3 设置请求可以接受内容的样式
+    operationManager.responseSerializer.acceptableContentTypes=[NSSet setWithObject:@"text/html"];
+    // 4 管理器发送POST请求
+    [operationManager POST:url parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSString *str=[responseObject objectForKey:@"chartdata"];
+        str=[str stringByReplacingOccurrencesOfString:@"'"withString:@"\""];
+
+ 
+        NSError*error;
+        SBJSON*sbjson=[[SBJSON alloc]init];
+        //用对象解析string
+        NSArray*array=[sbjson objectWithString:str error:&error];
+        
+        precentArr=[NSMutableArray array];
+        values = [NSMutableArray array];
+        colors = [NSMutableArray array];
+        energyBMs = [NSMutableArray array];
+        
+        if (array.count>0) {
+            if (_infoArray.count>0) {
+                [_infoArray removeAllObjects];
+            }
+            float sum=0;
+            for (NSDictionary *dic in array) {
+                EnergyConstuteInfo *energyinfo=[[EnergyConstuteInfo alloc]initWithDictionary:dic];
+                [_infoArray addObject:energyinfo];
+                //名字
+                [energyBMs addObject:energyinfo.energyname];
+                //值
+                [values addObject:energyinfo.energyvalue];
+                sum=sum+[energyinfo.energyvalue floatValue];
+                //颜色数组
+                UIColor *color = [self stringTOColor:energyinfo.energycolor];
+                [colors addObject:color];
+            }
+//参数百分比转化
+
+            float value;
+            float value1;
+            for (NSString*str in values) {
+                value=[str floatValue];
+                value1=value/sum*100;
+                NSString*strr=[NSString stringWithFormat:@"%.2f",value1];
+                [precentArr addObject:strr];
+            }
+         [_HUD hide:YES afterDelay:0.3f];
+        //调用环形图
+
+            [self addCircleView];
+           
+            // Doughnut Chart
+            TWRCircularChart *pieChart = [[TWRCircularChart alloc] initWithValues:precentArr colors:colors type:TWRCircularChartTypeDoughnut animated:YES];
+            // You can even leverage callbacks when chart animation ends!
+            [_chartView loadCircularChart:pieChart withCompletionHandler:^(BOOL finished) {
+                if (finished) {
+                }
+            }];
+            
+            
+            [_tableView reloadData];
+
+        }else{
+            [_HUD hide:YES afterDelay:0.3f];
+            UIAlertView*_alert=[[UIAlertView alloc]initWithTitle:@"提示" message:@"当前时间没有数据" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+            [_alert show];
+        }
+        
+        
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+         [_HUD hide:YES afterDelay:0.3f];
+        
+    }];
+}
+//环形View
+- (void)addCircleView{
+    if (_chartView) {
+        [_chartView removeFromSuperview];
+    }
+    // Chart View
+    _chartView = [[TWRChartView alloc] initWithFrame:AdaptCGRectMake(0, 300, 320, 200)];
+    _chartView.backgroundColor = [UIColor colorWithWhite:0.2 alpha:0.1];
+    [self.view addSubview:_chartView];
+    
+    UILabel *lable = [[UILabel alloc]initWithFrame:AdaptCGRectMake(120, 90, 80, 20)];
+    lable.text = @"暂无数据";
+    lable.tag = 1050;
+    lable.textColor = [UIColor whiteColor];
+    lable.textAlignment = NSTextAlignmentCenter;
+    lable.font = [UIFont systemFontOfSize:15.0];
+    [lable adjustsFontSizeToFitWidth];
+    [_chartView addSubview:lable];
+    
+    [self addOtherPieView];
+    
+}
+
+
+#pragma mark ----能耗构成
+//将字符串转换为颜色
+- (UIColor *)stringTOColor:(NSString *)str
+{
+    if (!str || [str isEqualToString:@""]) {
+        return nil;
+    }
+    unsigned red,green,blue;
+    NSRange range;
+    range.length = 2;
+    range.location = 1;
+    [[NSScanner scannerWithString:[str substringWithRange:range]] scanHexInt:&red];
+    range.location = 3;
+    [[NSScanner scannerWithString:[str substringWithRange:range]] scanHexInt:&green];
+    range.location = 5;
+    [[NSScanner scannerWithString:[str substringWithRange:range]] scanHexInt:&blue];
+    UIColor *color= [UIColor colorWithRed:red/255.0f green:green/255.0f blue:blue/255.0f alpha:1];
+    return color;
+}
+
+- (void)addOtherPieView{
+    UIImageView *imageView = (UIImageView *)[_chartView viewWithTag:6];
+    if (imageView) {
+        [imageView removeFromSuperview];
+    }
+    UIImageView *ggggView = [[UIImageView alloc]initWithFrame:AdaptCGRectMake(97, 37, 127, 127)];
+    ggggView.tag = 6;
+    ggggView.backgroundColor = [UIColor clearColor];
+    ggggView.image = [UIImage imageNamed:@"yuan"];
+    ggggView.layer.cornerRadius = ggggView.frame.size.height/2;
+    ggggView.layer.masksToBounds = YES;
+    [_chartView addSubview:ggggView];
+    
+    NSMutableArray *icons = [NSMutableArray array];
+    for (UIColor *color in colors) {
+        UIImage *iamge = [self createImageWithColor:color];
+        [icons addObject:iamge];
+    }
+    if (values.count != 0) {
+        UILabel *lable = (UILabel *)[_chartView viewWithTag:1050];
+        if (lable) {
+            [lable removeFromSuperview];
+        }
+        for (int i = 0; i <  values.count; i ++) {
+            imageAndTextView *stuctureView = [[imageAndTextView alloc]initWithFrame:AdaptCGRectMake(25, 30+15*i, 70, 14)];
+            stuctureView.imageView.frame = AdaptCGRectMake(10, 4, 6, 6);
+            stuctureView.imageView.layer.cornerRadius = stuctureView.imageView.frame.size.height/2;
+            stuctureView.imageView.layer.masksToBounds = YES;
+            stuctureView.imageView.image = icons[i];
+            stuctureView.lable.frame = AdaptCGRectMake(18, 1, 60, 12);
+            NSString *str = @"%";
+            stuctureView.lable.text = [energyBMs[i] stringByAppendingFormat:@" %@%@",precentArr[i],str];
+            stuctureView.lable.font = [UIFont systemFontOfSize:10];
+            [ggggView addSubview:stuctureView];
+        }
+    }
+}
+
+
+//将颜色转换为图片
+-(UIImage*)createImageWithColor:(UIColor*) color
+{
+    CGRect rect=CGRectMake(0.0f, 0.0f, 1.0f, 1.0f);
+    UIGraphicsBeginImageContext(rect.size);
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    CGContextSetFillColorWithColor(context, [color CGColor]);
+    CGContextFillRect(context, rect);
+    UIImage *theImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return theImage;
+}
+
+#pragma mark UITableViewDataSource
+-(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
+    return _infoArray.count;
+    ;
+}
+#pragma mark UITableViewDelegate
+-(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
+    return 31.0*[UIUtils getWindowHeight]/568;
+}
+-(UITableViewCell*)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    static NSString*cellid=@"cellid";
+    EnergyChartListCell *cell=[tableView dequeueReusableCellWithIdentifier:cellid];
+    if (!cell) {
+        cell=[[EnergyChartListCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellid];
+    } cell.userInteractionEnabled=NO;
+  
+    EnergyConstuteInfo *enerInfo=_infoArray[indexPath.row];
+    [cell getareaEnrgeyInfo:enerInfo];
+    return cell;
+}
+
+//进入筛选界面
+- (void)ChooseClickc:(UIButton *)sender{
+    [tabbarVC.otherChoiceView removeFromSuperview];
+    tabbarVC.viewisHidden = NO;
+    
+    ConstituteAnalysisViewController *coseVC=[[ConstituteAnalysisViewController alloc]init];
+    coseVC.delegat=self;
+    UINavigationController *nav=[[UINavigationController alloc]initWithRootViewController:coseVC];
+    [self presentViewController:nav animated:YES completion:nil];
+    
+}
+#pragma mark Myprotocol
+-(void)paddArray:(NSArray *)arr{
+
+    [self loadDate:arr];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

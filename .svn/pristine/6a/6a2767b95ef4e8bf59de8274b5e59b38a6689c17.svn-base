@@ -1,0 +1,30 @@
+//
+//  JinFengEnergyPCH.pch
+//  JinFengEnergyAPP
+//
+//  Created by BlackChen on 15/12/4.
+//  Copyright © 2015年 BlackChen. All rights reserved.
+//
+
+#ifndef JinFengEnergyPCH_pch
+#define JinFengEnergyPCH_pch
+
+#define SCREEN_WIDTH ([UIScreen mainScreen].bounds.size.width)
+#define SCREEN_HEIGHT ([UIScreen mainScreen].bounds.size.height)
+#define QJ_COOKIE
+
+
+#import "Header.h"
+#import "AppDelegate.h"
+#import "RDVTabBarController.h"
+#import "NavigationBarView.h"
+#import "AFNetworking.h"
+#import "SBJSON.h"
+#import "LoginAccountViewController.h"
+#import "NSString+Util.h"
+
+
+// Include any system framework and library headers here that should be included in all compilation units.
+// You will also need to set the Prefix Header build setting of one or more of your targets to reference this file.
+
+#endif /* JinFengEnergyPCH_pch */

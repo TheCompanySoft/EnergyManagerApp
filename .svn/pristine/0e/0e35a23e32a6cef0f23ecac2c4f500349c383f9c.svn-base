@@ -1,0 +1,20 @@
+//
+//  NavigationBarView.h
+//  JinfengEnergApp
+//
+//  Created by BlackChen on 15/12/25.
+//  Copyright © 2015年 BlackChen. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface NavigationBarView : UIView
+
+@property (nonatomic, strong) UILabel *title_Lable;
+@property (nonatomic, strong) UIButton *navigationBarButton;
+
+@property (nonatomic, strong)UILabel *BBValuesLable;
+@property (nonatomic, strong) UIButton *leftButton;
+@property (nonatomic, strong) UIButton *rightWarningButton;
+
+@end

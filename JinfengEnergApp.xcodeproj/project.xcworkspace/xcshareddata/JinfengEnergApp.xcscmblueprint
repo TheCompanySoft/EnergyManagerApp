@@ -1,0 +1,25 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "64220279-3678-da4f-89b6-a97e2e630cdf++1048",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+    "64220279-3678-da4f-89b6-a97e2e630cdf++1048" : {
+
+    }
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "64220279-3678-da4f-89b6-a97e2e630cdf++1048" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "C1260A82-0643-4362-843F-4D2E79E66E63",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "64220279-3678-da4f-89b6-a97e2e630cdf++1048" : "EnergyManagerApp%E6%BA%90%E7%A0%81\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "JinfengEnergApp",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "JinfengEnergApp.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/svn.windinfo.net\/svn\/EnergyManageCenterPhone",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Subversion",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "64220279-3678-da4f-89b6-a97e2e630cdf++1048"
+    }
+  ]
+}

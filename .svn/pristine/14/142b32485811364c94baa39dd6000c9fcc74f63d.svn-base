@@ -1,0 +1,22 @@
+//
+//  imageAndTextView.h
+//  JinfengEnergApp
+//
+//  Created by BlackChen on 15/12/9.
+//  Copyright © 2015年 BlackChen. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+
+
+
+
+@interface imageAndTextView : UIView
+
+@property (nonatomic,strong) UIImageView *imageView;
+@property (nonatomic,strong) UILabel *lable;
+
+
+
+@end

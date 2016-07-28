@@ -1,0 +1,16 @@
+//
+//  HomeLinechartInfo.h
+//  JinfengEnergApp
+//
+//  Created by HKsoft on 16/1/6.
+//  Copyright © 2016年 BlackChen. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface HomeLinechartInfo : NSObject
+@property(nonatomic,strong)NSString*energyColor;
+@property(nonatomic,strong)NSString*energyType;
+@property(nonatomic,strong)NSArray*energyList;
+-(id)initWithDictionary:(NSDictionary*)dictionary;
+@end

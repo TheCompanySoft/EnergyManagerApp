@@ -1,0 +1,18 @@
+//
+//  Myprotocol.h
+//  练习1
+//
+//  Created by scsys on 15/5/29.
+//  Copyright (c) 2015年 sdzy. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@protocol Myprotocol <NSObject>
+@optional
+-(void)paddArray:(NSArray*)arr;
+-(void)productArray:(NSArray*)arr ;
+-(void)businessArray:(NSArray*)array;
+-(void)areaArray:(NSArray*)array;
+-(void)businecode:(NSArray*)array;
+@end

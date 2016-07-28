@@ -1,0 +1,26 @@
+//
+//  EnergyConstuteInfo.h
+//  JinfengEnergApp
+//
+//  Created by HKsoft on 16/1/5.
+//  Copyright © 2016年 BlackChen. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface EnergyConstuteInfo : NSObject
+@property(nonatomic,strong)NSString*idd;
+@property(nonatomic,strong)NSString*querystime;
+@property(nonatomic,strong)NSString*queryetime;
+@property(nonatomic,strong)NSString*energyid;
+@property(nonatomic,strong)NSString*energyname;
+@property(nonatomic,strong)NSString*energyunit;
+
+@property(nonatomic,strong)NSString*energyvalue;
+@property(nonatomic,strong)NSString*energymoney;
+
+@property(nonatomic,strong)NSString*energysumcoalstandard;
+
+@property(nonatomic,strong)NSString*energycolor;
+-(id)initWithDictionary:(NSDictionary*)dictionary;
+@end

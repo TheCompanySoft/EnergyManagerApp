@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="9531" systemVersion="15C50" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES">
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="9529"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <tableViewCell contentMode="scaleToFill" restorationIdentifier="warningCell" selectionStyle="default" indentationWidth="10" reuseIdentifier="warningCellID" rowHeight="90" id="KGk-i7-Jjw" customClass="warningViewcellTableViewCell">
+            <rect key="frame" x="0.0" y="0.0" width="225" height="90"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+            <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="KGk-i7-Jjw" id="H2p-sc-9uM">
+                <rect key="frame" x="0.0" y="0.0" width="225" height="89"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <imageView userInteractionEnabled="NO" contentMode="TopLeft" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" misplaced="YES" image="warning_yellow" translatesAutoresizingMaskIntoConstraints="NO" id="b1Y-uh-8M2">
+                        <rect key="frame" x="10" y="10" width="11" height="9"/>
+                        <rect key="contentStretch" x="1" y="1" width="1" height="1"/>
+                    </imageView>
+                    <imageView userInteractionEnabled="NO" contentMode="topRight" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" misplaced="YES" image="news" translatesAutoresizingMaskIntoConstraints="NO" id="19r-yY-aTM">
+                        <rect key="frame" x="180" y="10" width="20" height="8"/>
+                    </imageView>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" misplaced="YES" text="金风科技" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="DbN-Z4-WO2">
+                        <rect key="frame" x="25" y="5" width="56" height="17"/>
+                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                        <color key="textColor" red="0.068003203819999997" green="0.59238873110000001" blue="0.056487744049999997" alpha="1" colorSpace="calibratedRGB"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="nmM-0S-ZOR">
+                        <rect key="frame" x="10" y="90" width="205" height="1"/>
+                        <color key="backgroundColor" red="0.06800320381927151" green="0.59238873106060608" blue="0.056487744050874686" alpha="1" colorSpace="calibratedRGB"/>
+                        <variation key="heightClass=compact" ambiguous="YES" misplaced="YES">
+                            <rect key="frame" x="10" y="91" width="205" height="1"/>
+                        </variation>
+                    </imageView>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" misplaced="YES" text="2015-08-01  10:02" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="gjR-Tw-50Z">
+                        <rect key="frame" x="25" y="25" width="106" height="15"/>
+                        <fontDescription key="fontDescription" type="system" pointSize="12"/>
+                        <color key="textColor" red="0.068003203819999997" green="0.59238873110000001" blue="0.056487744049999997" alpha="1" colorSpace="calibratedRGB"/>
+                        <nil key="highlightedColor"/>
+                        <variation key="heightClass=compact" ambiguous="YES" misplaced="YES">
+                            <rect key="frame" x="25" y="26" width="106" height="15"/>
+                        </variation>
+                    </label>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" misplaced="YES" text="计量器具&quot;车间照明列表&quot;通讯站中断" lineBreakMode="tailTruncation" numberOfLines="3" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="z88-Tl-Tdx">
+                        <rect key="frame" x="25" y="40" width="190" height="42"/>
+                        <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                        <color key="textColor" red="0.068003203819999997" green="0.59238873110000001" blue="0.056487744049999997" alpha="1" colorSpace="calibratedRGB"/>
+                        <nil key="highlightedColor"/>
+                        <variation key="heightClass=compact" ambiguous="YES" misplaced="YES">
+                            <rect key="frame" x="25" y="41" width="207" height="16"/>
+                        </variation>
+                    </label>
+                </subviews>
+                <constraints>
+                    <constraint firstItem="19r-yY-aTM" firstAttribute="top" secondItem="b1Y-uh-8M2" secondAttribute="top" constant="5" id="1Th-eD-AMo"/>
+                    <constraint firstItem="DbN-Z4-WO2" firstAttribute="top" secondItem="b1Y-uh-8M2" secondAttribute="top" constant="5" id="5Qf-jo-eMc"/>
+                    <constraint firstItem="gjR-Tw-50Z" firstAttribute="leading" secondItem="DbN-Z4-WO2" secondAttribute="leading" constant="25" id="5pz-Yi-nh0"/>
+                    <constraint firstItem="z88-Tl-Tdx" firstAttribute="leading" secondItem="DbN-Z4-WO2" secondAttribute="leading" constant="25" id="Ued-Ri-mX2"/>
+                    <constraint firstItem="19r-yY-aTM" firstAttribute="trailing" secondItem="z88-Tl-Tdx" secondAttribute="trailing" constant="10" id="gbm-Uu-e9W"/>
+                    <constraint firstItem="nmM-0S-ZOR" firstAttribute="trailing" secondItem="z88-Tl-Tdx" secondAttribute="trailing" constant="10" id="ggk-3l-1bZ"/>
+                    <constraint firstItem="nmM-0S-ZOR" firstAttribute="leading" secondItem="DbN-Z4-WO2" secondAttribute="leading" constant="25" id="z4J-DL-V2h"/>
+                </constraints>
+                <variation key="default">
+                    <mask key="constraints">
+                        <exclude reference="5Qf-jo-eMc"/>
+                        <exclude reference="5pz-Yi-nh0"/>
+                        <exclude reference="Ued-Ri-mX2"/>
+                        <exclude reference="ggk-3l-1bZ"/>
+                        <exclude reference="z4J-DL-V2h"/>
+                        <exclude reference="1Th-eD-AMo"/>
+                        <exclude reference="gbm-Uu-e9W"/>
+                    </mask>
+                </variation>
+                <variation key="heightClass=compact">
+                    <mask key="constraints">
+                        <include reference="5Qf-jo-eMc"/>
+                        <include reference="5pz-Yi-nh0"/>
+                        <include reference="Ued-Ri-mX2"/>
+                        <include reference="ggk-3l-1bZ"/>
+                        <include reference="z4J-DL-V2h"/>
+                        <include reference="1Th-eD-AMo"/>
+                        <include reference="gbm-Uu-e9W"/>
+                    </mask>
+                </variation>
+            </tableViewCellContentView>
+            <color key="tintColor" red="0.068003203819999997" green="0.59238873110000001" blue="0.056487744049999997" alpha="1" colorSpace="calibratedRGB"/>
+            <connections>
+                <outlet property="detailsLable" destination="z88-Tl-Tdx" id="RhC-Mw-X9P"/>
+                <outlet property="iconImage" destination="b1Y-uh-8M2" id="Mxa-Y8-NaJ"/>
+                <outlet property="lineImage" destination="nmM-0S-ZOR" id="lZn-L5-jIx"/>
+                <outlet property="newsImage" destination="19r-yY-aTM" id="iMu-VG-y5g"/>
+                <outlet property="timeLable" destination="gjR-Tw-50Z" id="2Sa-g9-9a0"/>
+                <outlet property="titleImage" destination="DbN-Z4-WO2" id="Cae-va-mgf"/>
+            </connections>
+            <point key="canvasLocation" x="288.5" y="464"/>
+        </tableViewCell>
+    </objects>
+    <resources>
+        <image name="news" width="20" height="8"/>
+        <image name="warning_yellow" width="11" height="9"/>
+    </resources>
+</document>
